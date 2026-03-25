@@ -14,7 +14,11 @@ def write_text(path: str, text: str) -> None:
 
 
 def build_results_interpretation(within_df: pd.DataFrame, pooled_df: pd.DataFrame) -> str:
-    top = within_df.groupby("bank_type")["stage2_efficiency"].mean().sort_values(ascending=False)
+    if within_df.empty or pooled_df.empty:
+        return "# Черновая интерпретация результатов DEA\nНедостаточно данных для генерации интерпретации."
+
+    stage1_mean = within_df.groupby("bank_type")["stage1_efficiency"].mean().sort_values(ascending=False)
+    stage2_mean = within_df.groupby("bank_type")["stage2_efficiency"].mean().sort_values(ascending=False)
     efficient_share = (
         pooled_df.assign(efficient=lambda d: (d["stage2_efficiency"] >= 0.999).astype(int))
         .groupby("bank_type")["efficient"]
@@ -24,21 +28,58 @@ def build_results_interpretation(within_df: pd.DataFrame, pooled_df: pd.DataFram
 
     lines = [
         "# Черновая интерпретация результатов DEA\n",
-        "## Внутригрупповой анализ\n",
-        "Средние значения stage2-эффективности по группам (внутригрупповой фронтир):",
-        top.to_string(),
-        "\n## Межгрупповой анализ\n",
-        "Доли полностью эффективных банков (score≈1) на общей границе:",
+        "## Внутригрупповой анализ: Stage 1 (привлечение средств)\n",
+        stage1_mean.to_string(),
+        "\n## Внутригрупповой анализ: Stage 2 (трансформация в доходы и кредиты)\n",
+        stage2_mean.to_string(),
+        "\n## Межгрупповой анализ на общей границе\n",
+        "Доли полностью эффективных банков (по stage2 score≈1):",
         efficient_share.to_string(),
-        "\nКраткий вывод: группы с более высоким средним и меньшим разбросом находятся ближе к эффективной границе.",
+        "\nВажно: combined_summary_metric — это агрегированная метрика-приближение, а не строгая network DEA эффективность.",
     ]
     return "\n".join(lines)
 
 
-def write_methodology_templates() -> None:
-    intro = """# Введение (черновик)\nИсследование оценивает эффективность банков Австрии с применением двухэтапного DEA и второй стадии регрессии."""
-    methodology = """# Методология DEA (черновик)\nРеализованы модели CCR/BCC и input/output orientation. По умолчанию используется BCC-input как наиболее уместная постановка при гетерогенном масштабе банков."""
-    assumptions = """# assumptions_and_method_notes\n- DEA-оценки ограничены интервалом [0,1], поэтому OLS используется с осторожностью.\n- В качестве расширения добавлена fractional logit (GLM Binomial).\n- При наличии сильной цензуры рекомендуется bootstrap DEA и truncated regression (future work)."""
+def write_methodology_templates(config: dict) -> None:
+    stage1 = config["analysis"]["dea"]["stage1"]
+    stage2 = config["analysis"]["dea"]["stage2"]
+    intro = (
+        "# Введение (черновик)\n"
+        "Исследование оценивает эффективность банков Австрии с применением двухэтапного DEA и второй стадии регрессии."
+    )
+
+    methodology = f"""# Методология DEA (черновик)
+
+## Что считается в проекте
+В проекте реализована **sequential two-stage DEA approximation**.
+- Stage 1: {stage1['inputs']} -> {stage1['outputs']}.
+- Stage 2: {stage2['inputs']} -> {stage2['outputs']}.
+
+Это **не строгая network DEA** с единой межэтапной оптимизацией; этапы решаются последовательно и отдельно,
+после чего формируется вспомогательная агрегированная метрика `combined_summary_metric`.
+
+## Параметры DEA
+- Stage 1: RTS={stage1['returns_to_scale']}, orientation={stage1['orientation']}.
+- Stage 2: RTS={stage2['returns_to_scale']}, orientation={stage2['orientation']}.
+
+## Интерпретация
+- Stage 1 score: эффективность привлечения фондирования.
+- Stage 2 score: эффективность преобразования фондирования в доходы/кредиты.
+- `combined_summary_metric`: только summary-индикатор для сравнений, не строгая итоговая DEA-оценка.
+"""
+
+    assumptions = """# assumptions_and_method_notes
+
+## Методологические решения
+1. Реализация использует radial DEA scores (CCR/BCC; input/output), solved via LP (PuLP).
+2. Реализован sequential two-stage approximation, а не network DEA.
+3. Проверяется статус LP-решения; не-Optimal наблюдения попадают в dea_problematic_observations.
+4. По данным качества: нули в inputs и отрицательные значения могут исключаться по конфигу.
+
+## Ограничения
+- В текущей версии не рассчитываются slacks/targets; доступен только peer_count как упрощённый индикатор reference set.
+- Для строгой второй стадии DEA-регрессии (Simar-Wilson) нужны дополнительные процедуры bootstrap/truncated regression.
+"""
 
     write_text("report/introduction.md", intro)
     write_text("report/methodology_dea.md", methodology)

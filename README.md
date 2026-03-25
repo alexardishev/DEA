@@ -1,8 +1,17 @@
 # Austrian Banking DEA Pipeline (Python-only)
 
-Полностью воспроизводимый пайплайн для двухэтапного DEA-анализа банков Австрии, межгрупповых сравнений, второй стадии регрессий и формирования академичных визуализаций/текстов.
+Воспроизводимый пайплайн для анализа банков Австрии: подготовка данных, **двухэтапный DEA**, межгрупповые сравнения, регрессии второй стадии, визуализации и текстовые черновики для университетской работы.
 
-## 1) Быстрый старт
+## Ключевое методологическое уточнение
+
+В проекте реализована **sequential two-stage DEA approximation**:
+- Stage 1 и Stage 2 решаются отдельно;
+- `combined_summary_metric` — это агрегированный summary-индикатор,
+- это **не** строгая network DEA итоговая эффективность.
+
+Подробно: `report/assumptions_and_method_notes.md`.
+
+## Быстрый запуск
 
 ```bash
 python -m venv .venv
@@ -11,83 +20,53 @@ pip install -r requirements.txt
 python src/pipeline.py --stage all
 ```
 
-## 2) Структура проекта
+## Структура
 
-- `data_raw/` — исходные данные (без правок)
+- `data_raw/` — исходные данные
 - `data_processed/` — очищенные данные
-- `config/` — конфиги параметров и правил фильтрации
-- `src/` — основная логика пайплайна
-  - `src/data/` — загрузка/валидация/трансформация
-  - `src/dea/` — DEA (CCR/BCC, input/output, LP на PuLP)
-  - `src/regression/` — OLS + fractional GLM, диагностики
-  - `src/visualization/` — графики уровня статьи
-  - `src/reporting/` — экспорт таблиц и текстовых интерпретаций
-- `outputs/` — артефакты (таблицы, графики, карты, модели, логи, тексты)
-- `report/` — методологические черновики
-- `tests/` — минимальные тесты
+- `config/` — конфиги
+- `src/` — код пайплайна
+- `outputs/` — таблицы, графики, логи, тексты
+- `report/` — методологические и текстовые черновики
+- `tests/` — тесты
 
-## 3) Двухэтапная DEA-логика
-
-### Stage 1: эффективность привлечения средств
-- Inputs: `staff_expenses`, `operating_expenses`, `tangible_assets`
-- Output: `deposits`
-
-### Stage 2: эффективность трансформации привлечённых средств
-- Input: `deposits`
-- Outputs: `interest_income`, `fee_income` (`Provisionserträge`), `customer_loans`
-
-## 4) Внутригрупповой и межгрупповой анализ
-
-- Внутригрупповой: DEA отдельно для `cooperative`, `commercial`, `savings`
-- Межгрупповой: DEA на объединённой выборке (общая граница эффективности)
-- Экспортируются распределения, ранги, доля эффективных банков, описательная статистика.
-
-## 5) Модели DEA и переключение
+## DEA-конфигурация по этапам
 
 Файл `config/pipeline_config.yaml`:
-- `default_returns_to_scale: bcc|ccr`
-- `default_orientation: input|output`
-- `run_sensitivity: true` и блок `sensitivity_models`
+- `analysis.dea.stage1.returns_to_scale`, `analysis.dea.stage1.orientation`
+- `analysis.dea.stage2.returns_to_scale`, `analysis.dea.stage2.orientation`
+- поддерживаются `bcc/ccr` и `input/output`.
 
-По умолчанию выбрана `BCC + input` (гетерогенный масштаб банков и управляемость input-факторов).
+## Обработка проблемных наблюдений
 
-## 6) Регрессии второй стадии
+Файл `config/filter_rules.yaml`:
+- правила нулей в inputs/outputs;
+- правила отрицательных значений;
+- IQR-outlier flag/exclude;
+- manual exclusions.
 
-- Базово: OLS (HC3)
-- Дополнительно: fractional GLM (binomial link) для bounded score
-- Dummy-переменные по типу банка добавляются автоматически
-- Диагностика: VIF, таблица коэффициентов и значимостей
-
-## 7) Обработка проблемных наблюдений
-
-`config/filter_rules.yaml` управляет режимом:
-- `flag_only`
-- `exclude_critical` (по умолчанию)
-- `winsorize_and_flag`
-
-Логи и артефакты:
+Результаты записываются в:
 - `outputs/logs/data_quality_report.csv`
 - `outputs/logs/excluded_observations.csv`
+- `outputs/tables/dea_problematic_observations.csv`
 
-## 8) Какие поля ожидаются во входном датасете
+## DEA-выходы
 
-Обязательно (после переименования):
-- `bank_name`, `bank_type`
-- `staff_expenses`, `operating_expenses`, `tangible_assets`, `deposits`
-- `interest_income`, `fee_income`, `customer_loans`
+- `outputs/tables/dea_stage1_scores.csv/xlsx`
+- `outputs/tables/dea_stage2_scores.csv/xlsx`
+- `outputs/tables/dea_combined_summary.csv/xlsx`
+- `outputs/tables/dea_within_group_summary.csv/xlsx`
+- `outputs/tables/dea_between_group_summary.csv/xlsx`
+- `outputs/tables/dea_problematic_observations.csv/xlsx`
+- `outputs/tables/dea_sensitivity_comparison.csv/xlsx` (если включено)
 
-Опционально:
-- `year`, `total_assets`, `equity`, `R1`, `R2`, `R3`, `latitude`, `longitude`
+## Визуализации
 
-## 9) Замена датасета без переписывания кода
+Строятся отдельно для Stage 1 и Stage 2:
+- violin, box, density, bar (group means),
+- scatter.
 
-1. Положить новый файл в `data_raw/`.
-2. Обновить `paths.raw_data` в `config/pipeline_config.yaml`.
-3. При новых названиях колонок обновить `column_mapping`.
-4. При новых названиях типов банков обновить `bank_type_mapping`.
-5. Запустить `python src/pipeline.py --stage all`.
-
-## 10) Поэтапный запуск
+## Поэтапный запуск
 
 ```bash
 python src/pipeline.py --stage data
@@ -97,14 +76,8 @@ python src/pipeline.py --stage viz
 python src/pipeline.py --stage report
 ```
 
-## 11) Где смотреть результаты
+## Ограничения текущей DEA-реализации
 
-- Таблицы: `outputs/tables/`
-- Графики: `outputs/figures/`
-- Карты: `outputs/maps/`
-- Тексты/интерпретации: `outputs/text/`
-- Логи: `outputs/logs/`
-
-## 12) Методологические примечания
-
-См. `report/assumptions_and_method_notes.md`.
+- рассчитываются radial efficiency scores;
+- доступен упрощённый peer-индикатор (`peer_count`);
+- slacks/targets не реализованы и это явно фиксируется в методологических заметках.

@@ -77,23 +77,46 @@ quality_rules:
     - fee_income
     - customer_loans
   outlier_iqr_multiplier: 3.0
-  zero_handling: flag_and_exclude
   drop_duplicates: true
-
-exclusions:
-  manual_bank_names: []
-  min_required_columns_fraction: 0.8
 
 analysis:
   dea:
-    default_returns_to_scale: bcc   # ccr or bcc
-    default_orientation: input      # input or output
-    run_sensitivity: true
-    sensitivity_models:
-      - returns_to_scale: ccr
-        orientation: input
-      - returns_to_scale: bcc
-        orientation: output
+    model_note: sequential_two_stage_approximation
+    stage1:
+      returns_to_scale: bcc
+      orientation: input
+      inputs:
+        - staff_expenses
+        - operating_expenses
+        - tangible_assets
+      outputs:
+        - deposits
+    stage2:
+      returns_to_scale: bcc
+      orientation: input
+      inputs:
+        - deposits
+      outputs:
+        - interest_income
+        - fee_income
+        - customer_loans
+    sensitivity:
+      enabled: true
+      scenarios:
+        - name: bcc_input_baseline
+          stage1:
+            returns_to_scale: bcc
+            orientation: input
+          stage2:
+            returns_to_scale: bcc
+            orientation: input
+        - name: ccr_input
+          stage1:
+            returns_to_scale: ccr
+            orientation: input
+          stage2:
+            returns_to_scale: ccr
+            orientation: input
 
   regression:
     dependent_metric: stage2_efficiency

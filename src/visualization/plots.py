@@ -47,10 +47,22 @@ def plot_density(df, score_col: str, cfg: dict, output_name: str) -> None:
     plt.close(fig)
 
 
+def plot_bar_group_means(df, score_col: str, cfg: dict, output_name: str) -> None:
+    apply_academic_style()
+    fig, ax = plt.subplots()
+    means = df.groupby("bank_type", as_index=False)[score_col].mean()
+    sns.barplot(data=means, x="bank_type", y=score_col, ax=ax)
+    ax.set_title(f"Mean {score_col} by bank type")
+    ax.set_xlabel("Bank type")
+    ax.set_ylabel("Mean efficiency")
+    _save_multi_format(fig, Path("outputs/figures") / output_name, cfg["visualization"]["figure_format"])
+    plt.close(fig)
+
+
 def plot_scatter_inputs_outputs(df, cfg: dict, output_name: str) -> None:
     apply_academic_style()
     fig, ax = plt.subplots()
-    sns.scatterplot(data=df, x="deposits", y="interest_income", hue="bank_type", alpha=0.7, ax=ax)
-    ax.set_title("Deposits vs Interest income")
+    sns.scatterplot(data=df, x="deposits", y="stage2_efficiency", hue="bank_type", alpha=0.7, ax=ax)
+    ax.set_title("Deposits vs stage 2 efficiency")
     _save_multi_format(fig, Path("outputs/figures") / output_name, cfg["visualization"]["figure_format"])
     plt.close(fig)
