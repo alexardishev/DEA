@@ -18,24 +18,45 @@ io:
 column_mapping:
   Bank: bank_name
   Institut: bank_name
+  Unternehmensname Latin alphabet: bank_name
+  Bank name: bank_name
   Banktyp: bank_type
   Typ: bank_type
   Jahr: year
+  Sitz: address
   Personalaufwand: staff_expenses
+  Input 1 (=Personalaufwand): staff_expenses
+  Input 1 (=Personalaufwand) 5: staff_expenses
   Betriebsaufwand: operating_expenses
+  Input 2 (=Sachaufwand/andere Verwaltungsaufwendungen): operating_expenses
   Sachanlagen: tangible_assets
   Anlagevermögen: tangible_assets
+  Input 3(=Sachanlagen): tangible_assets
+  Input 3(=Sachanlagen)(: tangible_assets
   Einlagen: deposits
+  Output 1 (=Verbindlichkeiten ggü. Kunden): deposits
+  Output 1 (=Verbindlichkeiten gg Kunden): deposits
   Zinsertraege: interest_income
   Zinserträge: interest_income
+  Output 2.1 (=Zinserträge): interest_income
+  Output 2.1 (=Zinsertr): interest_income
   Provisionserträge: fee_income
   Provisionsertraege: fee_income
+  Output 2.2 (=Provisionserträge): fee_income
+  Output 2.2 (=Provisionsertr): fee_income
   Kundenkredite: customer_loans
+  Output 2.3 (=Forderungen ggü. Kunden): customer_loans
+  Output 2.3 (=Forderungen gg Kunden): customer_loans
   Bilanzsumme: total_assets
   Eigenkapital: equity
   R1: R1
+  R1 (=Aktiva): R1
   R2: R2
+  R2 (=Equity): R2
+  R2 (=Equity)2: R2
   R3: R3
+  R3 (=Verbindlichkeiten gegenüber Kreditinstituten): R3
+  R3 (=Verbindlichkeiten gegenuber Kreditinstituten): R3
 
 bank_type_mapping:
   Genossenschaftsbank: cooperative
