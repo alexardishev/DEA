@@ -1,0 +1,124 @@
+project:
+  random_seed: 42
+  locale: en_US
+
+paths:
+  raw_data: data_raw/Dataset-BANKS_ready to use.xls
+  processed_data: data_processed/banks_processed.csv
+  quality_report: outputs/logs/data_quality_report.csv
+  excluded_observations: outputs/logs/excluded_observations.csv
+
+io:
+  dataset_sheet: null
+  id_column: bank_id
+  bank_name_column: bank_name
+  bank_type_column: bank_type
+  year_column: year
+
+column_mapping:
+  Bank: bank_name
+  Institut: bank_name
+  Banktyp: bank_type
+  Typ: bank_type
+  Jahr: year
+  Personalaufwand: staff_expenses
+  Betriebsaufwand: operating_expenses
+  Sachanlagen: tangible_assets
+  Anlagevermögen: tangible_assets
+  Einlagen: deposits
+  Zinsertraege: interest_income
+  Zinserträge: interest_income
+  Provisionserträge: fee_income
+  Provisionsertraege: fee_income
+  Kundenkredite: customer_loans
+  Bilanzsumme: total_assets
+  Eigenkapital: equity
+  R1: R1
+  R2: R2
+  R3: R3
+
+bank_type_mapping:
+  Genossenschaftsbank: cooperative
+  Genossenschaftsbanken: cooperative
+  Kooperationsbank: cooperative
+  Commercial Bank: commercial
+  Kommerzbank: commercial
+  Geschaeftsbank: commercial
+  Geschäftsbank: commercial
+  Sparkasse: savings
+  Sparkassen: savings
+
+required_columns:
+  - bank_name
+  - bank_type
+  - staff_expenses
+  - operating_expenses
+  - tangible_assets
+  - deposits
+  - interest_income
+  - fee_income
+  - customer_loans
+
+optional_columns:
+  - year
+  - total_assets
+  - equity
+  - R1
+  - R2
+  - R3
+
+quality_rules:
+  critical_nonpositive_columns:
+    - staff_expenses
+    - operating_expenses
+    - tangible_assets
+    - deposits
+    - interest_income
+    - fee_income
+    - customer_loans
+  outlier_iqr_multiplier: 3.0
+  zero_handling: flag_and_exclude
+  drop_duplicates: true
+
+exclusions:
+  manual_bank_names: []
+  min_required_columns_fraction: 0.8
+
+analysis:
+  dea:
+    default_returns_to_scale: bcc   # ccr or bcc
+    default_orientation: input      # input or output
+    run_sensitivity: true
+    sensitivity_models:
+      - returns_to_scale: ccr
+        orientation: input
+      - returns_to_scale: bcc
+        orientation: output
+
+  regression:
+    dependent_metric: stage2_efficiency
+    base_predictors:
+      - R1
+      - R2
+      - R3
+      - total_assets
+      - equity
+      - deposits
+    include_bank_type_dummies: true
+    run_fractional_glm: true
+
+visualization:
+  style: academic
+  dpi: 300
+  figure_format:
+    - png
+    - pdf
+  palette:
+    cooperative: "#7A0019"
+    commercial: "#0A3D62"
+    savings: "#1B5E20"
+
+reporting:
+  export_excel: true
+  export_csv: true
+  text_language: ru

@@ -1,0 +1,20 @@
+# Управление проблемными наблюдениями.
+# mode:
+#   - flag_only: не исключать, только маркировать.
+#   - exclude_critical: исключать наблюдения с критичными нарушениями.
+#   - winsorize_and_flag: подрезать выбросы, но оставлять наблюдения.
+mode: exclude_critical
+
+critical_rules:
+  allow_zero_for:
+    - fee_income
+  max_missing_ratio_per_row: 0.3
+
+winsorization:
+  enabled: false
+  lower_quantile: 0.01
+  upper_quantile: 0.99
+
+manual_exclusions:
+  bank_names: []
+  bank_ids: []
