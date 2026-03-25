@@ -83,4 +83,7 @@ def write_methodology_templates(config: dict) -> None:
 
     write_text("report/introduction.md", intro)
     write_text("report/methodology_dea.md", methodology)
-    write_text("report/assumptions_and_method_notes.md", assumptions)
+
+    assumptions_path = Path("report/assumptions_and_method_notes.md")
+    if not assumptions_path.exists():
+        write_text(str(assumptions_path), assumptions)

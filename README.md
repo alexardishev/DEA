@@ -17,7 +17,7 @@
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python src/pipeline.py --stage all
+python -m src.pipeline --stage all
 ```
 
 ## Структура
@@ -55,6 +55,7 @@ python src/pipeline.py --stage all
 - `outputs/tables/dea_stage1_scores.csv/xlsx`
 - `outputs/tables/dea_stage2_scores.csv/xlsx`
 - `outputs/tables/dea_combined_summary.csv/xlsx`
+- `outputs/tables/dea_within_group_scores.csv/xlsx`
 - `outputs/tables/dea_within_group_summary.csv/xlsx`
 - `outputs/tables/dea_between_group_summary.csv/xlsx`
 - `outputs/tables/dea_problematic_observations.csv/xlsx`
@@ -69,11 +70,11 @@ python src/pipeline.py --stage all
 ## Поэтапный запуск
 
 ```bash
-python src/pipeline.py --stage data
-python src/pipeline.py --stage dea
-python src/pipeline.py --stage regression
-python src/pipeline.py --stage viz
-python src/pipeline.py --stage report
+python -m src.pipeline --stage data
+python -m src.pipeline --stage dea
+python -m src.pipeline --stage regression
+python -m src.pipeline --stage viz
+python -m src.pipeline --stage report
 ```
 
 ## Ограничения текущей DEA-реализации

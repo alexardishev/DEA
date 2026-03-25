@@ -15,13 +15,28 @@ class DataLoader:
         self.config = config
 
     def load_raw(self) -> pd.DataFrame:
-        """Load raw Excel/CSV file from configured path."""
+        """Load raw Excel/CSV file from configured path with deterministic sheet handling."""
         raw_path = Path(self.config["paths"]["raw_data"])
         logging.info("Loading raw data from %s", raw_path)
 
         if raw_path.suffix.lower() in {".xls", ".xlsx"}:
             sheet = self.config["io"].get("dataset_sheet")
-            df = pd.read_excel(raw_path, sheet_name=sheet)
+            if sheet is None:
+                # Deterministic fallback: first worksheet in workbook.
+                xls = pd.ExcelFile(raw_path)
+                if not xls.sheet_names:
+                    raise ValueError(f"Excel file has no sheets: {raw_path}")
+                selected_sheet = xls.sheet_names[0]
+                logging.warning("dataset_sheet is null, using first sheet: %s", selected_sheet)
+                df = xls.parse(selected_sheet)
+            else:
+                df = pd.read_excel(raw_path, sheet_name=sheet)
+
+            if isinstance(df, dict):
+                # Additional safety in case a list/None was passed unexpectedly.
+                first_key = sorted(df.keys())[0]
+                logging.warning("read_excel returned dict; using first sheet key: %s", first_key)
+                df = df[first_key]
         else:
             df = pd.read_csv(raw_path)
         return df
@@ -31,7 +46,6 @@ class DataLoader:
         mapping = self.config.get("column_mapping", {})
         out = df.rename(columns=mapping).copy()
 
-        # Build a synthetic id if explicit id column is missing.
         id_col = self.config["io"].get("id_column", "bank_id")
         if id_col not in out.columns:
             out[id_col] = [f"bank_{i:05d}" for i in range(1, len(out) + 1)]

@@ -1,11 +1,9 @@
-# Change Summary (vs previous version)
+# Change Summary (final acceptance fixes)
 
-1. Усилена двухэтапная DEA-логика: stage 1 и stage 2 сохраняются отдельно, агрегат переименован в `combined_summary_metric` и явно помечен как approximation.
-2. DEA-параметры разделены по этапам: отдельные RTS/orientation для stage1 и stage2 в конфиге.
-3. Добавлена проверка LP-статуса для каждой DMU с отдельной таблицей проблемных наблюдений.
-4. Усилена обработка проблемных данных: правила нулей в inputs/outputs, outlier-правила, ручные исключения, причины в quality report.
-5. Реально реализован sensitivity analysis по сценариям из конфига с экспортом `dea_sensitivity_comparison`.
-6. Расширены DEA-выходы: отдельные stage-таблицы, within/between summaries, problematic observations.
-7. Визуализации DEA теперь строятся отдельно для stage 1 и stage 2.
-8. Расширены тесты DEA и data validation (RTS-ограничения, статусы, two-stage outputs, нулевые inputs).
-9. Обновлена документация и добавлена методологическая записка `report/assumptions_and_method_notes.md`.
+1. Исправлена загрузка Excel при `dataset_sheet: null`: теперь используется детерминированный fallback на первый лист и добавлена защитная обработка случая, когда `read_excel` вернул словарь листов.
+2. Обновлён официальный запуск в README на стабильный entrypoint `python -m src.pipeline --stage ...`.
+3. Исправлены standalone-режимы `viz` и `report`: теперь они читают `dea_within_group_scores.csv` для within-group результатов, а не подменяют их pooled-таблицей.
+4. Убрано перезаписывание подробной методологической записки: `report/assumptions_and_method_notes.md` создаётся только при отсутствии файла.
+5. Улучшен экспорт bank-level DEA stage-таблиц: добавлены `bank_name`, `bank_type`, `score`, `solution_status`, `is_efficient`, `rank_within_group` и диагностические поля.
+6. Добавлен тест `tests/test_data_loader.py` для проверки безопасного поведения при `dataset_sheet: null`.
+7. Выполнены технические проверки (compileall), а также предпринята попытка полного end-to-end запуска на реальном датасете (`python -m src.pipeline --stage all`), но запуск заблокирован отсутствием зависимостей (`pandas`) из-за сетевого прокси 403 при установке.

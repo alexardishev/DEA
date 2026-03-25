@@ -47,9 +47,44 @@ def run_dea_stage(df: pd.DataFrame, quality_report: pd.DataFrame, config: dict) 
     stage1_scores = output.pooled_scores.attrs.get("stage1_scores", pd.DataFrame())
     stage2_scores = output.pooled_scores.attrs.get("stage2_scores", pd.DataFrame())
 
+    if not stage1_scores.empty:
+        stage1_scores["rank_within_group"] = stage1_scores.groupby("bank_type")["stage1_efficiency"].rank(method="dense", ascending=False)
+        stage1_scores = stage1_scores.rename(columns={"stage1_efficiency": "score", "stage1_status": "solution_status", "stage1_is_efficient": "is_efficient"})
+        stage1_scores = stage1_scores[[
+            config["io"]["id_column"],
+            config["io"]["bank_name_column"],
+            "bank_type",
+            "score",
+            "solution_status",
+            "is_efficient",
+            "rank_within_group",
+            "stage1_peer_count",
+            "stage1_lambda_sum",
+            "returns_to_scale",
+            "orientation",
+        ]]
+
+    if not stage2_scores.empty:
+        stage2_scores["rank_within_group"] = stage2_scores.groupby("bank_type")["stage2_efficiency"].rank(method="dense", ascending=False)
+        stage2_scores = stage2_scores.rename(columns={"stage2_efficiency": "score", "stage2_status": "solution_status", "stage2_is_efficient": "is_efficient"})
+        stage2_scores = stage2_scores[[
+            config["io"]["id_column"],
+            config["io"]["bank_name_column"],
+            "bank_type",
+            "score",
+            "solution_status",
+            "is_efficient",
+            "rank_within_group",
+            "stage2_peer_count",
+            "stage2_lambda_sum",
+            "returns_to_scale",
+            "orientation",
+        ]]
+
     export_table(stage1_scores, "outputs/tables/dea_stage1_scores", True, True)
     export_table(stage2_scores, "outputs/tables/dea_stage2_scores", True, True)
     export_table(output.pooled_scores, "outputs/tables/dea_combined_summary", True, True)
+    export_table(output.within_scores, "outputs/tables/dea_within_group_scores", True, True)
 
     within_summary_stage1 = summarize_by_group(output.within_scores, "stage1_efficiency") if not output.within_scores.empty else pd.DataFrame()
     within_summary_stage2 = summarize_by_group(output.within_scores, "stage2_efficiency") if not output.within_scores.empty else pd.DataFrame()
@@ -178,14 +213,14 @@ def main(stage: str) -> None:
 
     if stage in {"all", "viz"}:
         if within is None:
-            within = pd.read_csv("outputs/tables/dea_combined_summary.csv")
+            within = pd.read_csv("outputs/tables/dea_within_group_scores.csv")
         if pooled is None:
             pooled = pd.read_csv("outputs/tables/dea_combined_summary.csv")
         run_visualization_stage(within, pooled, config)
 
     if stage in {"all", "report"}:
         if within is None:
-            within = pd.read_csv("outputs/tables/dea_combined_summary.csv")
+            within = pd.read_csv("outputs/tables/dea_within_group_scores.csv")
         if pooled is None:
             pooled = pd.read_csv("outputs/tables/dea_combined_summary.csv")
         run_reporting_stage(within, pooled, config)

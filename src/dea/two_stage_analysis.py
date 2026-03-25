@@ -98,7 +98,11 @@ def run_two_stage_dea(df: pd.DataFrame, config: dict) -> TwoStageDEAOutput:
         ]
     ].copy()
 
-    combined = df[[id_col, name_col, "bank_type"]].merge(s1, on=id_col, how="left").merge(
+    bank_meta = df[[id_col, name_col, "bank_type"]].copy()
+    s1 = bank_meta.merge(s1, on=id_col, how="left")
+    s2 = bank_meta.merge(s2, on=id_col, how="left")
+
+    combined = bank_meta.merge(s1.drop(columns=[name_col, "bank_type"]), on=id_col, how="left").merge(
         s2,
         on=id_col,
         how="left",
