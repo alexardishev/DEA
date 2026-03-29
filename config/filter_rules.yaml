@@ -1,0 +1,23 @@
+# Configurable handling of problematic observations.
+mode: exclude_critical
+
+manual_exclusions:
+  bank_names: []
+  bank_ids: []
+
+missingness:
+  max_missing_ratio_per_row: 0.3
+
+zero_rules:
+  inputs: exclude
+  outputs: flag
+  allow_zero_outputs:
+    - fee_income
+
+negative_rules:
+  numeric_columns: exclude
+
+outlier_rules:
+  method: iqr
+  multiplier: 3.0
+  action: flag

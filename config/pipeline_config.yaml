@@ -1,0 +1,168 @@
+project:
+  random_seed: 42
+  locale: en_US
+
+paths:
+  raw_data: data_raw/Dataset-BANKS_ready to use.xls
+  processed_data: data_processed/banks_processed.csv
+  quality_report: outputs/logs/data_quality_report.csv
+  excluded_observations: outputs/logs/excluded_observations.csv
+
+io:
+  dataset_sheet: null
+  id_column: bank_id
+  bank_name_column: bank_name
+  bank_type_column: bank_type
+  year_column: year
+
+column_mapping:
+  Bank: bank_name
+  Institut: bank_name
+  Unternehmensname Latin alphabet: bank_name
+  Bank name: bank_name
+  Banktyp: bank_type
+  Typ: bank_type
+  Jahr: year
+  Sitz: address
+  Personalaufwand: staff_expenses
+  Input 1 (=Personalaufwand): staff_expenses
+  Input 1 (=Personalaufwand) 5: staff_expenses
+  Betriebsaufwand: operating_expenses
+  Input 2 (=Sachaufwand/andere Verwaltungsaufwendungen): operating_expenses
+  Sachanlagen: tangible_assets
+  Anlagevermögen: tangible_assets
+  Input 3(=Sachanlagen): tangible_assets
+  Input 3(=Sachanlagen)(: tangible_assets
+  Einlagen: deposits
+  Output 1 (=Verbindlichkeiten ggü. Kunden): deposits
+  Output 1 (=Verbindlichkeiten gg Kunden): deposits
+  Zinsertraege: interest_income
+  Zinserträge: interest_income
+  Output 2.1 (=Zinserträge): interest_income
+  Output 2.1 (=Zinsertr): interest_income
+  Provisionserträge: fee_income
+  Provisionsertraege: fee_income
+  Output 2.2 (=Provisionserträge): fee_income
+  Output 2.2 (=Provisionsertr): fee_income
+  Kundenkredite: customer_loans
+  Output 2.3 (=Forderungen ggü. Kunden): customer_loans
+  Output 2.3 (=Forderungen gg Kunden): customer_loans
+  Bilanzsumme: total_assets
+  Eigenkapital: equity
+  R1: R1
+  R1 (=Aktiva): R1
+  R2: R2
+  R2 (=Equity): R2
+  R2 (=Equity)2: R2
+  R3: R3
+  R3 (=Verbindlichkeiten gegenüber Kreditinstituten): R3
+  R3 (=Verbindlichkeiten gegenuber Kreditinstituten): R3
+
+bank_type_mapping:
+  Genossenschaftsbank: cooperative
+  Genossenschaftsbanken: cooperative
+  Kooperationsbank: cooperative
+  Commercial Bank: commercial
+  Kommerzbank: commercial
+  Geschaeftsbank: commercial
+  Geschäftsbank: commercial
+  Sparkasse: savings
+  Sparkassen: savings
+
+required_columns:
+  - bank_name
+  - bank_type
+  - staff_expenses
+  - operating_expenses
+  - tangible_assets
+  - deposits
+  - interest_income
+  - fee_income
+  - customer_loans
+
+optional_columns:
+  - year
+  - total_assets
+  - equity
+  - R1
+  - R2
+  - R3
+
+quality_rules:
+  critical_nonpositive_columns:
+    - staff_expenses
+    - operating_expenses
+    - tangible_assets
+    - deposits
+    - interest_income
+    - fee_income
+    - customer_loans
+  outlier_iqr_multiplier: 3.0
+  drop_duplicates: true
+
+analysis:
+  dea:
+    model_note: sequential_two_stage_approximation
+    stage1:
+      returns_to_scale: bcc
+      orientation: input
+      inputs:
+        - staff_expenses
+        - operating_expenses
+        - tangible_assets
+      outputs:
+        - deposits
+    stage2:
+      returns_to_scale: bcc
+      orientation: input
+      inputs:
+        - deposits
+      outputs:
+        - interest_income
+        - fee_income
+        - customer_loans
+    sensitivity:
+      enabled: true
+      scenarios:
+        - name: bcc_input_baseline
+          stage1:
+            returns_to_scale: bcc
+            orientation: input
+          stage2:
+            returns_to_scale: bcc
+            orientation: input
+        - name: ccr_input
+          stage1:
+            returns_to_scale: ccr
+            orientation: input
+          stage2:
+            returns_to_scale: ccr
+            orientation: input
+
+  regression:
+    dependent_metric: stage2_efficiency
+    base_predictors:
+      - R1
+      - R2
+      - R3
+      - total_assets
+      - equity
+      - deposits
+    include_bank_type_dummies: true
+    run_fractional_glm: true
+
+visualization:
+  style: academic
+  dpi: 300
+  figure_format:
+    - png
+    - pdf
+  palette:
+    cooperative: "#7A0019"
+    commercial: "#0A3D62"
+    savings: "#1B5E20"
+
+reporting:
+  export_excel: true
+  export_csv: true
+  text_language: ru
